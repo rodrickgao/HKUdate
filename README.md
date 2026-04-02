@@ -5,7 +5,7 @@
 ## 🌐 在线访问 & 下载
 
 **前端网站（可直接打开）：**
-- **https://luxury-hamster-1c4114.netlify.app**
+- **https://kaleidoscopic-panda-68aa1f.netlify.app**
 
 **完整源码下载（推荐）：**
 - **https://github.com/rodrickgao/HKUdate/raw/main/HKUdate-v1.0.zip**
