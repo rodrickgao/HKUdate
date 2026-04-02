@@ -4,10 +4,11 @@
 
 ## 🌐 在线访问 & 下载
 
-**前端网站（可直接打开）：**
-- **https://kaleidoscopic-panda-68aa1f.netlify.app**
+**前端网站（需密码）：**
+- **https://cute-fudge-83a5a5.netlify.app**
+- 密码: `My-Drop-Site`
 
-**完整源码下载（推荐）：**
+**完整源码下载（推荐 - 无需密码）：**
 - **https://github.com/rodrickgao/HKUdate/raw/main/HKUdate-v1.0.zip**
 - 或访问 GitHub 仓库主页 → 点击 HKUdate-v1.0.zip → Download
 
@@ -24,8 +25,8 @@
 
 ## 如何使用
 
-### 方式一：在线访问（仅前端）
-直接打开上方链接浏览
+### 方式一：在线访问（需密码）
+打开上方链接，输入密码 `My-Drop-Site`
 
 ### 方式二：本地运行完整功能（推荐）
 
