@@ -2,12 +2,16 @@
 
 港大校园交友平台 - 基于性格匹配的智能校园交友系统
 
-## 🌐 在线访问
+## 🌐 在线访问 & 下载
 
 **前端网站（可直接打开）：**
 - **https://luxury-hamster-1c4114.netlify.app**
 
-> ⚠️ 注意：这是纯前端版本，邮箱验证功能需要后端服务。本地运行可使用 run.bat 启动完整功能。
+**完整源码下载（推荐）：**
+- **https://github.com/rodrickgao/HKUdate/raw/main/HKUdate-v1.0.zip**
+- 或访问 GitHub 仓库主页 → 点击 HKUdate-v1.0.zip → Download
+
+> ⚠️ 注意：在线版本无后端服务，邮箱验证功能需要下载完整版本地运行。
 
 ## 功能特点
 
