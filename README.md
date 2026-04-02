@@ -2,67 +2,62 @@
 
 港大校园交友平台 - 基于性格匹配的智能校园交友系统
 
+## 🌐 在线访问
+
+**前端网站（可直接打开）：**
+- **https://luxury-hamster-1c4114.netlify.app**
+
+> ⚠️ 注意：这是纯前端版本，邮箱验证功能需要后端服务。本地运行可使用 run.bat 启动完整功能。
+
 ## 功能特点
 
 - 🔐 仅限 @connect.hku.hk 邮箱注册
-- 📧 6位邮箱验证码验证
+- 📧 6位邮箱验证码验证（需本地运行）
 - 🧠 16型人格问卷 + 智能匹配算法
 - 🔒 隐私保护（每周二 7pm 后可见邮箱）
 - 🌍 中英文双语支持
 - 💾 自动登录 + 资料记忆功能
 
-## 快速开始
+## 如何使用
 
-### 方式一：Windows 一键运行（推荐）
+### 方式一：在线访问（仅前端）
+直接打开上方链接浏览
 
-1. 克隆或下载项目
-2. 解压后双击 `run.bat`
-3. 等待自动安装依赖并启动
-
-### 方式二：手动运行
+### 方式二：本地运行完整功能（推荐）
 
 ```bash
-# 1. 克隆项目
+# 克隆项目
 git clone https://github.com/rodrickgao/HKUdate.git
 cd HKUdate
 
-# 2. 安装依赖
+# 安装依赖
 npm install
 
-# 3. 启动后端（端口 3003）
+# 启动后端（端口 3003）
 node server.js
 
-# 4. 启动前端（端口 5173）
+# 启动前端（端口 5173）
 npm run dev
 ```
 
 打开浏览器访问：http://localhost:5173
 
+### 方式三：Windows 一键运行
+下载项目后，双击 `run.bat`
+
 ## 技术栈
 
 - **前端**: Vue 3 + Vite + Vue Router
-- **后端**: Express + Nodemailer
+- **后端**: Express + Nodemailer (本地运行)
+- **托管**: Netlify (在线前端)
 - **存储**: localStorage (浏览器本地)
-- **样式**: CSS Variables 主题系统
-
-## 项目结构
-
-```
-hku-date/
-├── src/                 # Vue 前端源码
-│   ├── views/           # 页面组件
-│   ├── App.vue         # 主应用
-│   └── main.js         # 入口文件
-├── server.js           # Express 后端
-├── run.bat             # Windows 一键运行
-└── package.json        # 项目配置
-```
 
 ## 注意事项
 
-1. 需要 Node.js (v18+) 环境
-2. 邮件发送功能需要配置 Gmail SMTP（开发模式可跳过）
-3. 仅供港大学生使用
+1. 在线版本无后端服务，邮箱验证功能不可用
+2. 完整功能需要在本地运行
+3. 需要 Node.js (v18+) 环境
+4. 仅供港大学生使用
 
 ## License
 
