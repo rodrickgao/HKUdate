@@ -6,12 +6,10 @@
 
 ## 🚀 快速开始
 
-### 最快：直接打开在线版
-双击 `START.bat` 或访问：
-**https://cute-fudge-83a5a5.netlify.app**
-密码：`My-Drop-Site`
+### 最快：直接打开
+**https://hku-date.vercel.app**
 
-> ⚠️ 在线版本验证码固定为测试码 `123456`
+⚠️ 在线版本验证码固定为测试码 `123456`
 
 ---
 
