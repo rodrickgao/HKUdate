@@ -19,11 +19,7 @@
           <h2>发现新朋友</h2>
           <p>向左滑过，向右喜欢</p>
           
-          <!-- Privacy Notice -->
-          <div class="privacy-notice">
-            <span class="privacy-icon">🔒</span>
-            <span>每周二晚上7点开放查看对方邮箱</span>
-          </div>
+
         </div>
 
         <!-- Card Stack -->
@@ -40,10 +36,7 @@
                 <span v-for="tag in user.tags" :key="tag" class="tag">{{ tag }}</span>
               </div>
               
-              <!-- Email hidden notice -->
-              <div class="email-hidden-notice">
-                <span>📧 对方邮箱将在每周二 19:00 后可见</span>
-              </div>
+
             </div>
           </div>
         </div>

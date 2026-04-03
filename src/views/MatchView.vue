@@ -19,13 +19,10 @@
         <div class="email-notice">
           <span class="notice-icon">📧</span>
           <div class="notice-content">
-            <strong>邮箱查看时间</strong>
-            <p>每周二 19:00 开放查看对方邮箱</p>
+            <strong>邮箱查看</strong>
+            <p>匹配成功后可随时查看对方邮箱</p>
           </div>
-          <div class="next-reveal" v-if="!isTuesday7pm">
-            <span class="countdown">距离开放还有：{{ timeUntilReveal }}</span>
-          </div>
-          <div class="revealed" v-else>
+          <div class="revealed">
             <span class="revealed-badge">✅ 已开放</span>
           </div>
         </div>
@@ -36,12 +33,9 @@
             <div class="match-info">
               <h3>{{ match.name }}</h3>
               <p>{{ match.major }} · {{ match.year }}</p>
-              <!-- Email (only shown on Tuesday 7pm) -->
-              <p class="match-email" v-if="isTuesday7pm">
+              <!-- Email (always visible) -->
+              <p class="match-email">
                 📧 {{ match.email }}
-              </p>
-              <p class="match-email-hidden" v-else>
-                🔒 邮箱将于每周二 19:00 可见
               </p>
             </div>
             <button class="btn btn-primary btn-sm" @click="chat(match)">聊天</button>
@@ -67,51 +61,10 @@ const matches = ref([
   { id: 2, name: 'Emily', major: '金融学', year: '硕士一年级', email: 'emily@connect.hku.hk', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d40?w=100' }
 ])
 
-// Check if it's Tuesday 7pm+
-const now = ref(new Date())
-let timer = null
-
-const isTuesday7pm = computed(() => {
-  const date = now.value
-  const day = date.getDay() // 0=Sun, 1=Mon, 2=Tue...
-  const hours = date.getHours()
-  return day === 2 && hours >= 19
-})
-
-const timeUntilReveal = computed(() => {
-  const date = new Date(now.value)
-  let nextTuesday = new Date(date)
-  
-  // Find next Tuesday
-  const day = date.getDay()
-  const daysUntilTuesday = day === 2 ? 7 : (2 - day + 7) % 7 || 7
-  nextTuesday.setDate(date.getDate() + daysUntilTuesday)
-  nextTuesday.setHours(19, 0, 0, 0)
-  
-  if (day === 2 && date.getHours() >= 19) {
-    return '已开放'
-  }
-  
-  const diff = nextTuesday - date
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  
-  return `${daysUntilTuesday}天 ${hours}小时 ${minutes}分钟`
-})
-
+// Emails always visible
 const chat = (match) => {
   alert(`正在打开与 ${match.name} 的聊天...`)
 }
-
-onMounted(() => {
-  timer = setInterval(() => {
-    now.value = new Date()
-  }, 60000) // Update every minute
-})
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
 </script>
 
 <style scoped>
