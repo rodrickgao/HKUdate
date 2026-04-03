@@ -7,7 +7,7 @@
 ## 🚀 快速开始
 
 ### 最快：直接打开
-**https://hku-date.vercel.app**
+**https://hku-date.pages.dev**
 
 ⚠️ 在线版本验证码固定为测试码 `123456`
 
