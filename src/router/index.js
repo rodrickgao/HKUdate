@@ -8,6 +8,7 @@ import MatchView from '../views/MatchView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import AboutView from '../views/AboutView.vue'
 import VerifyView from '../views/VerifyView.vue'
+import DemoView from '../views/Demo.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,6 +57,11 @@ const router = createRouter({
       path: '/verify',
       name: 'verify',
       component: VerifyView
+    },
+    {
+      path: '/demo',
+      name: 'demo',
+      component: DemoView
     }
   ]
 })

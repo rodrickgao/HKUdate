@@ -12,6 +12,9 @@
             <router-link to="/register" class="btn btn-accent">立即注册</router-link>
             <router-link to="/login" class="btn btn-outline" style="border-color: white; color: white;">登录</router-link>
           </div>
+          <div class="demo-action">
+            <router-link to="/demo" class="btn btn-demo">🎭 体验测试账号</router-link>
+          </div>
         </div>
       </div>
     </section>
@@ -201,5 +204,27 @@
 
 .cta h2 {
   color: var(--primary);
+}
+
+.demo-action {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.btn-demo {
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.5);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-demo:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: white;
+  transform: scale(1.03);
 }
 </style>

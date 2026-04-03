@@ -54,14 +54,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const matches = ref([
-  { id: 1, name: 'Sarah', major: '工商管理', year: '本科三年级', email: 'sarah@connect.hku.hk', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
-  { id: 2, name: 'Emily', major: '金融学', year: '硕士一年级', email: 'emily@connect.hku.hk', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d40?w=100' }
-])
+const matches = ref([])
 
-// Emails always visible
+onMounted(() => {
+  const stored = localStorage.getItem('hku_matches')
+  if (stored) {
+    matches.value = JSON.parse(stored)
+  }
+})
+
 const chat = (match) => {
   alert(`正在打开与 ${match.name} 的聊天...`)
 }

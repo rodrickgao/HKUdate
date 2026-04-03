@@ -52,37 +52,68 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const profiles = ref([
-  {
-    id: 1,
-    name: 'Sarah',
-    age: 21,
-    year: '本科三年级',
-    major: '工商管理',
-    bio: '热爱音乐和旅行，希望认识有趣的人～',
-    tags: ['音乐', '旅行', '美食'],
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
-  },
-  {
-    id: 2,
-    name: 'Emily',
-    age: 22,
-    year: '硕士一年级',
-    major: '金融学',
-    bio: '健身爱好者，喜欢探索香港的美食店',
-    tags: ['健身', '美食', '电影'],
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d40?w=400'
-  }
-])
+const profiles = ref([])
+
+const avatarMap = {
+  '🦊': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+  '🐯': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+  '🦋': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d40?w=400',
+  '🦁': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+  '🐱': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
+  '🦄': 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400',
+  '🐨': 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400',
+  '🐸': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+  '🐼': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
+  '🐷': 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400'
+}
+
+const gradeLabel = (g) => ({'1':'本科一','2':'本科二','3':'本科三','4':'本科四','5':'硕士一','6':'硕士二','7':'硕士三','8':'博士'}[g]||g)
+
+const interestEmojis = ['📚','🎵','🎬','📷','🏃','🍳','✈️','🎮','💻','🎨','🧘','🏊','⚽','🏀','🎾','💃','🎤','☕','🍜']
+
+onMounted(() => {
+  const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
+  const current = JSON.parse(localStorage.getItem('hkuuser') || 'null')
+  const likedIds = JSON.parse(localStorage.getItem('hku_liked') || '[]')
+
+  profiles.value = users
+    .filter(u => u.id !== current?.id && !likedIds.includes(u.id) && u.surveyCompleted)
+    .map(u => ({
+      id: u.id,
+      name: u.email.split('@')[0],
+      age: 21,
+      year: gradeLabel(u.survey?.grade),
+      major: u.survey?.major,
+      bio: u.survey?.preference || '港大同学，欢迎认识～',
+      tags: (u.survey?.interests || []).slice(0, 3),
+      avatar: avatarMap[u.survey?.avatar] || avatarMap['🦊']
+    }))
+})
 
 const pass = () => {
-  profiles.value.pop()
+  if (profiles.value.length) {
+    const removed = profiles.value.pop()
+    const liked = JSON.parse(localStorage.getItem('hku_liked') || '[]')
+    liked.push(removed.id)
+    localStorage.setItem('hku_liked', JSON.stringify(liked))
+  }
 }
 
 const like = () => {
-  profiles.value.pop()
+  if (profiles.value.length) {
+    const removed = profiles.value.pop()
+    const liked = JSON.parse(localStorage.getItem('hku_liked') || '[]')
+    liked.push(removed.id)
+    localStorage.setItem('hku_liked', JSON.stringify(liked))
+    // Add to matches
+    const matches = JSON.parse(localStorage.getItem('hku_matches') || '[]')
+    if (!matches.find(m => m.id === removed.id)) {
+      matches.push(removed)
+      localStorage.setItem('hku_matches', JSON.stringify(matches))
+    }
+  }
 }
 </script>
 
