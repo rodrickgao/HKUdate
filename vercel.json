@@ -1,4 +1,0 @@
-{
-  "buildCommand": "echo 'using prebuilt'",
-  "outputDirectory": "dist"
-}
