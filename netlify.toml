@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[context.production]
+  command = "npm run build"
+  publish = "dist"
+
+# 移除密码保护
+[settings]
+  password = ""

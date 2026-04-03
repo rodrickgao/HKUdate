@@ -13,7 +13,11 @@
       </div>
     </nav>
     <main class="page">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
     <footer class="footer" v-if="showFooter">
       <div class="container">

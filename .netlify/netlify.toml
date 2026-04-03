@@ -2,15 +2,17 @@ plugins = []
 headers = []
 redirects = []
 
+[settings]
+password = ""
+
 [functions]
 
 [functions."*"]
 
 [build]
 publish = "C:\\Users\\rodri\\.openclaw\\workspace\\hku-date\\dist"
-publishOrigin = "ui"
-commandOrigin = "ui"
-base = "C:\\Users\\rodri\\.openclaw\\workspace\\hku-date"
+publishOrigin = "config"
+commandOrigin = "config"
 command = "npm run build"
 
 [build.environment]

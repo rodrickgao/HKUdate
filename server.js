@@ -31,8 +31,8 @@ app.post('/api/send-code', async (req, res) => {
     return res.status(400).json({ error: 'Only @connect.hku.hk emails allowed' })
   }
   
-  // 生成6位验证码
-  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // 生成6位验证码 - 固定为123456便于测试
+  const code = '123456'
   
   // 存储验证码
   verificationCodes.set(email, {

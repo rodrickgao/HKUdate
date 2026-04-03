@@ -1,13 +1,13 @@
-import { createApp } from 'vue'
+import { createApp, reactive } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './style.css'
 
-// Global i18n state
+// Global i18n state — reactive so language changes trigger instant re-renders
 const i18n = {
-  state: {
+  state: reactive({
     lang: localStorage.getItem('hku_lang') || 'zh'
-  },
+  }),
   setLang(lang) {
     this.state.lang = lang
     localStorage.setItem('hku_lang', lang)

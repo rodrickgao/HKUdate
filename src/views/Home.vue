@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <div class="lang-toggle">
-      <button @click="toggleLang" class="lang-btn">
+      <button @click="toggleLang" class="lang-btn" :class="{ spinning: langAnimating }">
         {{ isEnglish ? '中文' : 'EN' }}
       </button>
     </div>
@@ -42,9 +42,12 @@ import { ref, inject, computed } from 'vue'
 const i18n = inject('i18n')
 const isEnglish = computed(() => i18n.state.lang === 'en')
 const t = (key) => i18n.t(key)
+const langAnimating = ref(false)
 
 const toggleLang = () => {
+  langAnimating.value = true
   i18n.setLang(isEnglish.value ? 'zh' : 'en')
+  setTimeout(() => { langAnimating.value = false }, 400)
 }
 </script>
 
@@ -64,12 +67,34 @@ const toggleLang = () => {
   color: white;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s ease,
+              color 0.2s ease,
+              transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .lang-btn:hover {
-  background: white;
-  color: var(--primary);
+  background: rgba(255,255,255,0.35);
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.lang-btn:active {
+  transform: scale(0.92);
+}
+
+@keyframes lang-spin {
+  0%   { transform: scale(1) rotate(0deg); }
+  25%  { transform: scale(0.85) rotate(-10deg); }
+  50%  { transform: scale(1.1) rotate(10deg); }
+  75%  { transform: scale(1.05) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.lang-btn.spinning {
+  animation: lang-spin 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .hero {
