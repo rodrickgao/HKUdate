@@ -1,9 +1,22 @@
+import blossom from 'edmonds-blossom'
+
 /**
  * HKU Date Backend - Cloudflare Pages Functions
- * Matching Algorithm: Mutual One-to-One, 60% threshold
+ * Matching Algorithm: Global optimum mutual one-to-one matching via Blossom
  */
 
 const USERS_KV = env => env?.USERS_KV
+const MAX_STORED_ROUNDS = 20
+const GRADE_ORDER = {
+  '1': 1,
+  '2': 2,
+  '3': 3,
+  '4': 4,
+  '5': 5,
+  '6': 6,
+  '7': 7,
+  '8': 8,
+}
 
 const getUsers = async (env) => {
   if (!USERS_KV(env)) return { users: [] }
@@ -44,89 +57,208 @@ const saveMatches = async (env, data) => {
   await USERS_KV(env).put('matches', JSON.stringify(data))
 }
 
-// 计算匹配分数（满分100）
-const calculateMatchScore = (user1, user2) => {
-  let score = 0
-  const survey1 = user1.survey
-  const survey2 = user2.survey
-  
-  // 性别匹配 (25分)
-  const genderMatch = (
-    (survey1.preferGender === 'any' || survey1.preferGender === survey2.gender) &&
-    (survey2.preferGender === 'any' || survey2.preferGender === survey1.gender)
-  )
-  if (genderMatch) score += 25
-  
-  // 人格类型 (15分)
-  if (survey1.personality && survey2.personality) score += 15
-  
-  // 专业相同 (15分)
-  if (survey1.major === survey2.major && survey1.major) score += 15
-  
-  // 年级相同 (10分)
-  if (survey1.grade === survey2.grade) score += 10
-  
-  // 共同兴趣 (35分封顶)
-  if (survey1.interests && survey2.interests && survey1.interests.length > 0) {
-    const common = survey1.interests.filter(i => survey2.interests.includes(i))
-    score += Math.min(common.length * 7, 35)
-  }
-  
-  return score
+const normalizeList = value => Array.isArray(value) ? value.filter(Boolean) : []
+const getGradeRank = grade => GRADE_ORDER[String(grade)] ?? null
+
+const isGenderCompatible = (survey1, survey2) => (
+  (survey1.preferGender === 'any' || survey1.preferGender === survey2.gender) &&
+  (survey2.preferGender === 'any' || survey2.preferGender === survey1.gender)
+)
+
+const isGradePreferenceSatisfied = (preferGrade, selfGrade, candidateGrade) => {
+  const preferences = normalizeList(preferGrade)
+  if (!preferences.length) return true
+
+  const selfRank = getGradeRank(selfGrade)
+  const candidateRank = getGradeRank(candidateGrade)
+  if (selfRank === null || candidateRank === null) return true
+
+  return preferences.some(rule => {
+    if (rule === 'same') return candidateRank === selfRank
+    if (rule === 'older') return candidateRank > selfRank
+    if (rule === 'younger') return candidateRank < selfRank
+    return false
+  })
 }
 
-// 配对算法：双射最优匹配（贪心 + 互选检测）
+const getInterestStats = (interests1, interests2) => {
+  const list1 = normalizeList(interests1)
+  const list2 = normalizeList(interests2)
+  if (!list1.length || !list2.length) return { commonCount: 0, unionCount: Math.max(list1.length, list2.length, 1) }
+
+  const set2 = new Set(list2)
+  const commonCount = list1.filter(item => set2.has(item)).length
+  const unionCount = new Set([...list1, ...list2]).size || 1
+  return { commonCount, unionCount }
+}
+
+const getPersonalityScore = (personality1, personality2) => {
+  if (!personality1 || !personality2) return 0
+  const samePositionCount = [...personality1].filter((char, index) => char === personality2[index]).length
+  return samePositionCount * 4
+}
+
+const getGradeClosenessScore = (grade1, grade2) => {
+  const rank1 = getGradeRank(grade1)
+  const rank2 = getGradeRank(grade2)
+  if (rank1 === null || rank2 === null) return 0
+  const diff = Math.abs(rank1 - rank2)
+  return Math.max(0, 10 - diff * 2)
+}
+
+const buildScoreBreakdown = (survey1, survey2) => {
+  const { commonCount, unionCount } = getInterestStats(survey1.interests, survey2.interests)
+  const interestScore = Math.round((commonCount / unionCount) * 32)
+  const personalityScore = getPersonalityScore(survey1.personality, survey2.personality)
+  const majorScore = survey1.major && survey1.major === survey2.major ? 12 : 0
+  const gradeScore = getGradeClosenessScore(survey1.grade, survey2.grade)
+  const mutualPreferenceBonus =
+    (survey1.preferGender && survey1.preferGender !== 'any' ? 3 : 0) +
+    (survey2.preferGender && survey2.preferGender !== 'any' ? 3 : 0) +
+    (normalizeList(survey1.preferGrade).length ? 2 : 0) +
+    (normalizeList(survey2.preferGrade).length ? 2 : 0)
+
+  const totalScore = 25 + interestScore + personalityScore + majorScore + gradeScore + mutualPreferenceBonus
+
+  return {
+    totalScore,
+    commonInterestCount: commonCount,
+    interestScore,
+    personalityScore,
+    majorScore,
+    gradeScore,
+    mutualPreferenceBonus,
+  }
+}
+
+const isPairEligible = (user1, user2) => {
+  if (!user1?.surveyCompleted || !user2?.surveyCompleted) return false
+  if (!user1?.survey || !user2?.survey) return false
+  if (user1.id === user2.id) return false
+
+  const survey1 = user1.survey
+  const survey2 = user2.survey
+
+  if (!isGenderCompatible(survey1, survey2)) return false
+  if (!isGradePreferenceSatisfied(survey1.preferGrade, survey1.grade, survey2.grade)) return false
+  if (!isGradePreferenceSatisfied(survey2.preferGrade, survey2.grade, survey1.grade)) return false
+
+  return true
+}
+
+// 计算匹配分数（满分约 0-100）
+const calculateMatchScore = (user1, user2) => buildScoreBreakdown(user1.survey, user2.survey)
+
+// 配对算法：使用最大权匹配实现全局最优双射
 const runMatchingAlgorithm = (users) => {
-  const completedUsers = users.filter(u => u.surveyCompleted)
-  const MATCH_THRESHOLD = 60
-  
-  // Step 1: 计算所有满足性别偏好的候选配对及分数
-  const validPairs = []
-  
+  const completedUsers = users.filter(u => u.surveyCompleted && u.survey)
+  if (completedUsers.length < 2) {
+    return { matches: [], unmatchedUserIds: completedUsers.map(u => u.id), candidatePairs: 0 }
+  }
+
+  const weightedEdges = []
+  const edgeDetails = new Map()
+
   for (let i = 0; i < completedUsers.length; i++) {
     for (let j = i + 1; j < completedUsers.length; j++) {
       const user1 = completedUsers[i]
       const user2 = completedUsers[j]
-      const s1 = user1.survey
-      const s2 = user2.survey
-      
-      // 性别偏好必须互为满足
-      const u1Ok = s1.preferGender === 'any' || s1.preferGender === s2.gender
-      const u2Ok = s2.preferGender === 'any' || s2.preferGender === s1.gender
-      if (!u1Ok || !u2Ok) continue
-      
-      const score = calculateMatchScore(user1, user2)
-      if (score >= MATCH_THRESHOLD) {
-        validPairs.push({ user1, user2, score })
-      }
+
+      if (!isPairEligible(user1, user2)) continue
+
+      const breakdown = calculateMatchScore(user1, user2)
+      const weight = Math.max(1, Math.round(breakdown.totalScore))
+      weightedEdges.push([i, j, weight])
+      edgeDetails.set(`${i}:${j}`, breakdown)
     }
   }
-  
-  // Step 2: 按分数降序排列，优先匹配高分对
-  validPairs.sort((a, b) => b.score - a.score)
-  
-  // Step 3: 贪心选择，每人被匹配最多一次
-  const matchedUserIds = new Set()
-  const matches = []
-  
-  for (const pair of validPairs) {
-    if (matchedUserIds.has(pair.user1.id) || matchedUserIds.has(pair.user2.id)) continue
-    
-    matchedUserIds.add(pair.user1.id)
-    matchedUserIds.add(pair.user2.id)
-    
-    matches.push({
-      user1Id: pair.user1.id,
-      user2Id: pair.user2.id,
-      user1Email: pair.user1.email,
-      user2Email: pair.user2.email,
-      user1Survey: pair.user1.survey,
-      user2Survey: pair.user2.survey,
-      score: pair.score
-    })
+
+  if (!weightedEdges.length) {
+    return {
+      matches: [],
+      unmatchedUserIds: completedUsers.map(u => u.id),
+      candidatePairs: 0,
+    }
   }
-  
-  return { matches, unmatchedUserIds: [...matchedUserIds] }
+
+  const pairIndexes = blossom(weightedEdges)
+  const matches = []
+  const matchedUserIds = new Set()
+
+  pairIndexes.forEach((partnerIndex, index) => {
+    if (partnerIndex === -1 || partnerIndex <= index) return
+
+    const user1 = completedUsers[index]
+    const user2 = completedUsers[partnerIndex]
+    const edgeKey = `${Math.min(index, partnerIndex)}:${Math.max(index, partnerIndex)}`
+    const breakdown = edgeDetails.get(edgeKey)
+
+    if (!breakdown) return
+
+    matchedUserIds.add(user1.id)
+    matchedUserIds.add(user2.id)
+
+    matches.push({
+      user1Id: user1.id,
+      user2Id: user2.id,
+      user1Email: user1.email,
+      user2Email: user2.email,
+      user1Survey: user1.survey,
+      user2Survey: user2.survey,
+      score: breakdown.totalScore,
+      scoreBreakdown: breakdown,
+    })
+  })
+
+  return {
+    matches,
+    unmatchedUserIds: completedUsers.filter(user => !matchedUserIds.has(user.id)).map(user => user.id),
+    candidatePairs: weightedEdges.length,
+  }
+}
+
+const executeMatchingRound = async (env, db, trigger = 'manual') => {
+  const completedUsers = db.users.filter(u => u.surveyCompleted && u.survey)
+  const result = runMatchingAlgorithm(db.users)
+  const timestamp = new Date().toISOString()
+  const roundId = Date.now().toString()
+
+  const matchData = await getMatches(env)
+  const newRound = {
+    roundId,
+    timestamp,
+    trigger,
+    pairs: result.matches,
+    stats: {
+      totalUsers: completedUsers.length,
+      candidatePairs: result.candidatePairs,
+      matchedPairs: result.matches.length,
+      matchedUsers: result.matches.length * 2,
+      unmatchedUsers: result.unmatchedUserIds.length,
+      algorithm: 'edmonds-blossom-max-weight',
+    },
+  }
+
+  matchData.rounds.unshift(newRound)
+  matchData.rounds = matchData.rounds.slice(0, MAX_STORED_ROUNDS)
+  matchData.lastMatchTime = timestamp
+  await saveMatches(env, matchData)
+
+  const matchedUserIds = new Set()
+  for (const pair of result.matches) {
+    matchedUserIds.add(pair.user1Id)
+    matchedUserIds.add(pair.user2Id)
+  }
+
+  for (const user of db.users) {
+    const isMatched = matchedUserIds.has(user.id)
+    user.currentMatchId = isMatched ? roundId : null
+    user.isMatched = isMatched
+  }
+
+  await saveUsers(env, db)
+
+  return { roundId, timestamp, result, newRound }
 }
 
 const jsonResponse = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -139,7 +271,7 @@ export async function onRequest(context) {
   const url = new URL(request.url)
   const pathParts = url.pathname.split('/').filter(p => p)
   const routeParts = pathParts[0] === 'api' ? pathParts.slice(1) : pathParts
-  
+
   // CORS preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -151,18 +283,18 @@ export async function onRequest(context) {
       }
     })
   }
-  
+
   try {
     const endpoint = routeParts[0]
     const param1 = routeParts[1]
-    
+
     // ==================== 简单端点（无参数）====================
-    
+
     // Health check
     if (endpoint === 'health' && request.method === 'GET') {
       return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() })
     }
-    
+
     // 获取配对统计
     if (endpoint === 'match-stats' && request.method === 'GET') {
       const db = await getUsers(env)
@@ -178,55 +310,29 @@ export async function onRequest(context) {
         totalRounds: matchData.rounds.length
       })
     }
-    
+
     // 运行配对算法
     if (endpoint === 'run-match' && request.method === 'POST') {
       const db = await getUsers(env)
-      const completedUsers = db.users.filter(u => u.surveyCompleted)
-      
+      const completedUsers = db.users.filter(u => u.surveyCompleted && u.survey)
+
       if (completedUsers.length < 2) {
         return jsonResponse({ success: true, matchedCount: 0, unmatchedCount: completedUsers.length, message: '用户不足' })
       }
-      
-      const result = runMatchingAlgorithm(db.users)
-      
-      const matchData = await getMatches(env)
-      const newRound = {
-        roundId: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        pairs: result.matches,
-        stats: {
-          totalUsers: completedUsers.length,
-          matchedPairs: result.matches.length,
-          matchedUsers: result.matches.length * 2,
-          unmatchedUsers: completedUsers.length - result.matches.length * 2
-        }
-      }
-      matchData.rounds.unshift(newRound)
-      matchData.lastMatchTime = new Date().toISOString()
-      await saveMatches(env, matchData)
-      
-      const matchedUserIds = new Set()
-      for (const pair of result.matches) {
-        matchedUserIds.add(pair.user1Id)
-        matchedUserIds.add(pair.user2Id)
-      }
-      
-      for (const user of db.users) {
-        user.currentMatchId = matchedUserIds.has(user.id) ? newRound.roundId : null
-        user.isMatched = matchedUserIds.has(user.id)
-      }
-      await saveUsers(env, db)
-      
-      console.log(`[MATCH] ${result.matches.length} pairs matched, ${completedUsers.length - result.matches.length * 2} unmatched`)
+
+      const execution = await executeMatchingRound(env, db, 'manual-run')
+
+      console.log(`[MATCH] ${execution.result.matches.length} pairs matched, ${execution.result.unmatchedUserIds.length} unmatched`)
       return jsonResponse({
         success: true,
-        roundId: newRound.roundId,
-        matchedCount: result.matches.length,
-        unmatchedCount: completedUsers.length - result.matches.length * 2
+        roundId: execution.roundId,
+        matchedCount: execution.result.matches.length,
+        unmatchedCount: execution.result.unmatchedUserIds.length,
+        candidatePairs: execution.result.candidatePairs,
+        algorithm: execution.newRound.stats.algorithm,
       })
     }
-    
+
     // 种子测试用户
     if (endpoint === 'seed-test-users' && request.method === 'POST') {
       const testData = [
@@ -251,15 +357,15 @@ export async function onRequest(context) {
         { avatar: '🐼', gender: 'female', grade: '2', major: '市场学', interests: ['🎬 影视', '📷 摄影', '☕ 咖啡'], personality: 'ENFP', preferGender: 'any', preference: '喜欢创意工作' },
         { avatar: '🐯', gender: 'male', grade: '4', major: '计算机科学', interests: ['💻 编程', '🎮 游戏', '🎵 音乐'], personality: 'INTP', preferGender: 'any', preference: '喜欢技术挑战' },
       ]
-      
+
       const db = await getUsers(env)
       let created = 0
-      
+
       for (let i = 0; i < testData.length; i++) {
         const t = testData[i]
         const email = `user${i + 1}@connect.hku.hk`
         if (db.users.find(u => u.email === email)) continue
-        
+
         db.users.push({
           id: Date.now().toString() + '_' + i,
           email,
@@ -280,37 +386,49 @@ export async function onRequest(context) {
             preference: t.preference
           },
           createdAt: new Date().toISOString(),
+          surveyUpdatedAt: new Date().toISOString(),
           isMatched: false,
           currentMatchId: null
         })
         created++
       }
-      
+
       await saveUsers(env, db)
       return jsonResponse({ success: true, message: `Created ${created} test users`, totalUsers: db.users.length })
     }
-    
+
     // ==================== 单参数端点 ====================
-    
+
     // 获取当前用户匹配
     if (endpoint === 'my-match' && param1) {
       const userId = param1
-      const db = await getUsers(env)
-      const user = db.users.find(u => u.id === userId)
+      let db = await getUsers(env)
+      let user = db.users.find(u => u.id === userId)
       if (!user) return jsonResponse({ error: 'User not found' }, 404)
-      
-      const matchData = await getMatches(env)
-      
+
+      let matchData = await getMatches(env)
+
+      // 首次查看且系统尚未生成任何配对轮次时，自动执行一次匹配
+      if (user.surveyCompleted && !matchData.rounds.length) {
+        const completedUsers = db.users.filter(u => u.surveyCompleted && u.survey)
+        if (completedUsers.length >= 2) {
+          await executeMatchingRound(env, db, 'lazy-first-view')
+          db = await getUsers(env)
+          user = db.users.find(u => u.id === userId)
+          matchData = await getMatches(env)
+        }
+      }
+
       if (!user.isMatched || !user.currentMatchId) {
         return jsonResponse({ success: true, isMatched: false, message: '暂未匹配到合适的对象', waitForNextRound: true })
       }
-      
+
       const currentRound = matchData.rounds.find(r => r.roundId === user.currentMatchId)
       if (!currentRound) return jsonResponse({ success: true, isMatched: false, message: '配对已过期' })
-      
+
       const pair = currentRound.pairs.find(p => p.user1Id === userId || p.user2Id === userId)
       if (!pair) return jsonResponse({ success: true, isMatched: false, message: '配对已过期' })
-      
+
       const isUser1 = pair.user1Id === userId
       return jsonResponse({
         success: true,
@@ -322,13 +440,13 @@ export async function onRequest(context) {
         message: '恭喜匹配成功！'
       })
     }
-    
+
     // 获取用户列表
     if (endpoint === 'users' && request.method === 'GET') {
       const db = await getUsers(env)
       return jsonResponse({ success: true, users: db.users.map(({ password, ...u }) => u) })
     }
-    
+
     // 发送验证码
     if (endpoint === 'send-code' && request.method === 'POST') {
       const { email } = await request.json()
@@ -341,7 +459,7 @@ export async function onRequest(context) {
       await saveCodes(env, codes)
       return jsonResponse({ success: true, code })
     }
-    
+
     // 验证验证码
     if (endpoint === 'verify-code' && request.method === 'POST') {
       const { email, code } = await request.json()
@@ -354,16 +472,16 @@ export async function onRequest(context) {
       await saveCodes(env, codes)
       return jsonResponse({ success: true })
     }
-    
+
     // 注册
     if (endpoint === 'register' && request.method === 'POST') {
       const { email, password } = await request.json()
       if (!email?.endsWith('@connect.hku.hk')) return jsonResponse({ error: 'Invalid email' }, 400)
       if (!password || password.length < 6) return jsonResponse({ error: 'Password too short' }, 400)
-      
+
       const db = await getUsers(env)
       if (db.users.find(u => u.email === email)) return jsonResponse({ error: 'Email exists' }, 400)
-      
+
       const newUser = {
         id: Date.now().toString(),
         email,
@@ -371,6 +489,7 @@ export async function onRequest(context) {
         surveyCompleted: false,
         survey: null,
         createdAt: new Date().toISOString(),
+        surveyUpdatedAt: null,
         isMatched: false,
         currentMatchId: null
       }
@@ -378,7 +497,7 @@ export async function onRequest(context) {
       await saveUsers(env, db)
       return jsonResponse({ success: true, userId: newUser.id })
     }
-    
+
     // 登录
     if (endpoint === 'login' && request.method === 'POST') {
       const { email, password } = await request.json()
@@ -388,34 +507,50 @@ export async function onRequest(context) {
       const { password: _, ...userWithoutPassword } = user
       return jsonResponse({ success: true, user: userWithoutPassword })
     }
-    
+
     // 提交问卷
     if (endpoint === 'survey' && request.method === 'POST') {
       const { userId, survey } = await request.json()
       const db = await getUsers(env)
       const idx = db.users.findIndex(u => u.id === userId)
       if (idx === -1) return jsonResponse({ error: 'User not found' }, 404)
-      
+
+      const now = new Date().toISOString()
       db.users[idx].survey = survey
       db.users[idx].surveyCompleted = true
+      db.users[idx].surveyUpdatedAt = now
       db.users[idx].isMatched = false
       db.users[idx].currentMatchId = null
+
+      const completedUsers = db.users.filter(u => u.surveyCompleted && u.survey)
+      if (completedUsers.length >= 2) {
+        const execution = await executeMatchingRound(env, db, 'survey-submit')
+        return jsonResponse({
+          success: true,
+          autoMatched: true,
+          roundId: execution.roundId,
+          matchedCount: execution.result.matches.length,
+          unmatchedCount: execution.result.unmatchedUserIds.length,
+          candidatePairs: execution.result.candidatePairs,
+        })
+      }
+
       await saveUsers(env, db)
-      return jsonResponse({ success: true })
+      return jsonResponse({ success: true, autoMatched: false, message: '问卷已保存，等待更多用户参与' })
     }
-    
+
     // ==================== 双参数端点 ====================
-    
+
     // /matches/:userId
     if (endpoint === 'matches' && param1 && request.method === 'GET') {
       const userId = param1
       const db = await getUsers(env)
       const user = db.users.find(u => u.id === userId)
       if (!user) return jsonResponse({ error: 'User not found' }, 404)
-      
+
       const matchData = await getMatches(env)
       const userMatches = []
-      
+
       for (const round of matchData.rounds) {
         const pair = round.pairs.find(p => p.user1Id === userId || p.user2Id === userId)
         if (pair && round.roundId === user.currentMatchId) {
@@ -425,26 +560,27 @@ export async function onRequest(context) {
             timestamp: round.timestamp,
             matchScore: pair.score,
             matchSurvey: isUser1 ? pair.user2Survey : pair.user1Survey,
-            matchEmail: isUser1 ? pair.user2Email : pair.user1Email
+            matchEmail: isUser1 ? pair.user2Email : pair.user1Email,
+            scoreBreakdown: pair.scoreBreakdown || null,
           })
         }
       }
-      
+
       return jsonResponse({ success: true, matches: userMatches })
     }
-    
+
     // /user/:userId
     if (endpoint === 'user' && param1) {
       const userId = param1
       const db = await getUsers(env)
       const user = db.users.find(u => u.id === userId)
       if (!user) return jsonResponse({ error: 'User not found' }, 404)
-      
+
       if (request.method === 'GET') {
         const { password, ...userWithoutPassword } = user
         return jsonResponse({ success: true, user: userWithoutPassword })
       }
-      
+
       if (request.method === 'PUT') {
         const updates = await request.json()
         const idx = db.users.findIndex(u => u.id === userId)
@@ -453,7 +589,7 @@ export async function onRequest(context) {
         await saveUsers(env, db)
         return jsonResponse({ success: true })
       }
-      
+
       if (request.method === 'DELETE') {
         const idx = db.users.findIndex(u => u.id === userId)
         if (idx === -1) return jsonResponse({ error: 'User not found' }, 404)
@@ -462,9 +598,9 @@ export async function onRequest(context) {
         return jsonResponse({ success: true })
       }
     }
-    
+
     return jsonResponse({ error: 'Not found' }, 404)
-    
+
   } catch (error) {
     console.error('API Error:', error)
     return jsonResponse({ error: 'Internal server error' }, 500)
