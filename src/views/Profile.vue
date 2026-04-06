@@ -171,6 +171,7 @@
 <script setup>
 import { ref, inject, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../api.js'
 
 const router = useRouter()
 const i18n = inject('i18n')
@@ -215,10 +216,16 @@ const getGender = (g) => {
   return map[g] || g
 }
 
-const saveProfile = () => {
+const saveProfile = async () => {
   saveStatus.value = isEnglish.value ? '💾 Saving...' : '💾 保存中...'
   
   user.value.survey = { ...editData.value }
+  
+  try {
+    await api.updateUser(user.value.id, { survey: user.value.survey, surveyCompleted: true })
+  } catch (err) {
+    // Continue with local save even if API fails
+  }
   
   // Update localStorage
   localStorage.setItem('hkuuser', JSON.stringify(user.value))
@@ -255,9 +262,15 @@ const cancelEdit = () => {
   }
 }
 
-const deleteAccount = () => {
+const deleteAccount = async () => {
   const msg = isEnglish.value ? 'Are you sure? This cannot be undone!' : '确定要删除账户吗？此操作不可恢复！'
   if (confirm(msg)) {
+    try {
+      await api.deleteUser(user.value.id)
+    } catch (err) {
+      // Continue with local delete even if API fails
+    }
+    
     const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
     const filtered = users.filter(u => u.id !== user.value.id)
     localStorage.setItem('hkusrs', JSON.stringify(filtered))

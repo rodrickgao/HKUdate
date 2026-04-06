@@ -4,7 +4,7 @@
       <h1 class="page-title">🎭 测试账号登录</h1>
       <p class="page-subtitle">选择一个账号体验完整功能</p>
     </div>
-    <div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card" style="max-width: 900px; margin: 0 auto;">
       <p v-if="success" class="form-success">{{ success }}</p>
       <div class="demo-grid">
         <div
@@ -32,97 +32,109 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const success = ref('')
 
-const testUsers = [
-  {
-    id: '1', email: 'alice@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🦊', gender: 'female', grade: '3', major: '金融学', interests: ['📚 阅读', '🎵 音乐', '✈️ 旅行'], personality: 'ENFP', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '希望认识有趣的人，一起探索香港' }
-  },
-  {
-    id: '2', email: 'brian@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🐯', gender: 'male', grade: '5', major: '计算机科学', interests: ['💻 编程', '🎮 游戏', '🎵 音乐'], personality: 'INTJ', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '喜欢技术型的人，能一起讨论代码' }
-  },
-  {
-    id: '3', email: 'crystal@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🦋', gender: 'female', grade: '2', major: '市场学', interests: ['🎬 影视', '📷 摄影', '☕ 咖啡'], personality: 'ESFJ', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '喜欢拍照和喝咖啡的人' }
-  },
-  {
-    id: '4', email: 'david@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🦁', gender: 'male', grade: '4', major: '工商管理', interests: ['⚽ 足球', '🏀 篮球', '🎵 音乐'], personality: 'ENTJ', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '爱运动，阳光型' }
-  },
-  {
-    id: '5', email: 'emma@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🐱', gender: 'female', grade: '1', major: '心理学', interests: ['📚 阅读', '🧘 瑜伽', '🐱 撸猫'], personality: 'INFP', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '喜欢安静文艺的人' }
-  },
-  {
-    id: '6', email: 'frank@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🐼', gender: 'male', grade: '6', major: '数据科学', interests: ['💻 编程', '📚 阅读', '🎵 音乐'], personality: 'INTP', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '数据爱好者，喜欢分析' }
-  },
-  {
-    id: '7', email: 'grace@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🦄', gender: 'female', grade: '3', major: '经济学', interests: ['📚 阅读', '✈️ 旅行', '🍜 美食'], personality: 'ENFJ', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '喜欢探索美食和旅行' }
-  },
-  {
-    id: '8', email: 'henry@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🐨', gender: 'male', grade: '2', major: '工程学', interests: ['🏃 运动', '🎮 游戏', '🎤 KTV'], personality: 'ESTP', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '爱运动，爱唱歌' }
-  },
-  {
-    id: '9', email: 'iris@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🐸', gender: 'female', grade: '5', major: '法学', interests: ['📚 阅读', '🎬 影视', '🍳 烹饪'], personality: 'INFJ', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '理性成熟，喜欢烹饪' }
-  },
-  {
-    id: '10', email: 'james@connect.hku.hk', password: 'test123', surveyCompleted: true,
-    survey: { avatar: '🐯', gender: 'male', grade: '4', major: '建筑学', interests: ['🎨 绘画', '📷 摄影', '✈️ 旅行'], personality: 'ENTP', preferGender: 'any', preferGrade: [], preferAgeMin: '18', preferAgeMax: '25', preferTraits: [], preference: '建筑系学生，喜欢设计' }
-  }
+// 生成100个测试用户
+const avatars = ['🦊', '🐱', '🐶', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐙', '🦋', '🐯', '🦄', '🐲', '🦅', '🐰', '🐻', '🐷', '🦉']
+const genders = ['male', 'female']
+const grades = ['1', '2', '3', '4', '5', '6', '7', '8']
+const majors = ['金融学', '会计学', '经济学', '商业分析', '市场学', '人力资源管理', '计算机科学', '数据科学', '工程学', '法学', '医学', '建筑学', '心理学', '传媒与媒体', '新闻学', '社会学']
+const interests = [
+  ['📚 阅读', '🎵 音乐', '✈️ 旅行'], ['📚 阅读', '🧘 瑜伽', '🐱 撸猫'],
+  ['💻 编程', '🎮 游戏', '🎵 音乐'], ['💻 编程', '📚 阅读', '🎨 绘画'],
+  ['🎬 影视', '📷 摄影', '☕ 咖啡'], ['🎬 影视', '🎵 音乐', '🍜 美食'],
+  ['⚽ 足球', '🏀 篮球', '🎵 音乐'], ['⚽ 足球', '🏃 运动', '🎮 游戏'],
+  ['✈️ 旅行', '📷 摄影', '🍜 美食'], ['✈️ 旅行', '🎬 影视', '📚 阅读'],
+  ['🎮 游戏', '🎤 KTV', '☕ 咖啡'], ['🎮 游戏', '💻 编程', '🎵 音乐'],
+  ['🍳 烹饪', '📚 阅读', '🎵 音乐'], ['🍳 烹饪', '🍜 美食', '🎬 影视'],
+  ['🧘 瑜伽', '📚 阅读', '🐱 撸猫'], ['🏃 运动', '⚽ 足球', '🎵 音乐'],
+  ['🎨 绘画', '📷 摄影', '🎵 音乐'], ['🎨 绘画', '🏃 运动', '✈️ 旅行'],
+  ['📷 摄影', '🎬 影视', '✈️ 旅行'], ['📷 摄影', '🎨 绘画', '☕ 咖啡']
 ]
+const personalities = ['INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'ISFP', 'ISTP', 'ESFP', 'ESTP']
+const preferGenders = ['any', 'any', 'any', 'male', 'female'] // 权重偏向any
+const preferences = [
+  '希望认识有趣的人，一起探索香港',
+  '喜欢技术型的人，能一起讨论代码',
+  '喜欢拍照和喝咖啡的人',
+  '爱运动，阳光型',
+  '喜欢安静文艺的人',
+  '数据爱好者，喜欢分析',
+  '喜欢探索美食和旅行',
+  '爱运动，爱唱歌',
+  '理性成熟，喜欢烹饪',
+  '建筑系学生，喜欢设计',
+  '希望找个学霸一起学习',
+  '喜欢音乐艺术型的人',
+  '找个能一起运动的伙伴',
+  '喜欢旅行，想一起去探索世界'
+]
+
+const testUsers = []
+
+// 生成100个用户
+for (let i = 1; i <= 100; i++) {
+  const gender = genders[i % 2]
+  const preferGender = preferGenders[i % 5]
+  
+  testUsers.push({
+    id: i.toString(),
+    email: `user${i}@connect.hku.hk`,
+    password: 'test123',
+    surveyCompleted: true,
+    survey: {
+      avatar: avatars[i % avatars.length],
+      gender: gender,
+      grade: grades[i % grades.length],
+      major: majors[i % majors.length],
+      interests: interests[i % interests.length],
+      personality: personalities[i % personalities.length],
+      preferGender: preferGender,
+      preferGrade: [],
+      preferAgeMin: '18',
+      preferAgeMax: '25',
+      preferTraits: [],
+      preference: preferences[i % preferences.length]
+    }
+  })
+}
 
 const gradeLabel = (g) => ({ '1': '本科一', '2': '本科二', '3': '本科三', '4': '本科四', '5': '硕士一', '6': '硕士二', '7': '硕士三', '8': '博士' }[g] || g)
 
-const loginAs = (user) => {
-  // Save all test users
-  localStorage.setItem('hkusrs', JSON.stringify(testUsers))
-  // Set current user
-  localStorage.setItem('hkuuser', JSON.stringify(user))
-  // Pre-populate matches (everyone matched with alice for demo)
-  const matches = testUsers.filter(u => u.id !== user.id).map(u => ({
-    id: u.id,
-    name: u.email.split('@')[0],
-    major: u.survey.major,
-    year: gradeLabel(u.survey.grade),
-    email: u.email,
-    avatar: getAvatarUrl(u.survey.avatar),
-    personality: u.survey.personality
-  }))
-  localStorage.setItem('hku_matches', JSON.stringify(matches))
-  success.value = `已登录为 ${user.email}，${matches.length} 个匹配已就绪！`
-  setTimeout(() => router.push('/match'), 800)
+const loginAs = async (user) => {
+  try {
+    // Try to login via API to get the real user with server ID
+    const data = await api.login(user.email, user.password)
+    if (data.success) {
+      localStorage.setItem('hkuuser', JSON.stringify(data.user))
+      success.value = `已登录为 ${user.email}！`
+      setTimeout(() => router.push('/match'), 500)
+    } else {
+      // Fallback to local storage
+      localStorage.setItem('hkusrs', JSON.stringify(testUsers))
+      localStorage.setItem('hkuuser', JSON.stringify(user))
+      success.value = `已登录为 ${user.email}（本地模式）`
+      setTimeout(() => router.push('/match'), 800)
+    }
+  } catch (err) {
+    // Fallback to local storage
+    localStorage.setItem('hkusrs', JSON.stringify(testUsers))
+    localStorage.setItem('hkuuser', JSON.stringify(user))
+    success.value = `已登录为 ${user.email}（本地模式）`
+    setTimeout(() => router.push('/match'), 800)
+  }
 }
-
-const avatarUrls = {
-  '🦊': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-  '🐯': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-  '🦋': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d40?w=100',
-  '🦁': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-  '🐱': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100',
-  '🦄': 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100',
-  '🐨': 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100',
-  '🐸': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-  '🐼': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100'
-}
-
-const getAvatarUrl = (emoji) => avatarUrls[emoji] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'
 </script>
 
 <style scoped>
 .demo-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
 }
 .demo-user {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px;
+  gap: 12px;
+  padding: 12px;
   border: 2px solid var(--border);
   border-radius: 12px;
   cursor: pointer;
@@ -134,29 +146,37 @@ const getAvatarUrl = (emoji) => avatarUrls[emoji] || 'https://images.unsplash.co
   transform: translateX(4px);
 }
 .demo-avatar {
-  font-size: 40px;
-  width: 56px;
-  height: 56px;
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--gray-100);
   border-radius: 50%;
+  flex-shrink: 0;
 }
 .demo-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .demo-info strong {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .demo-info span {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--gray-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .demo-personality {
-  font-size: 12px !important;
+  font-size: 10px !important;
   color: var(--accent-dark) !important;
   font-weight: 600;
 }

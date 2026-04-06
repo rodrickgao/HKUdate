@@ -25,6 +25,7 @@
 <script setup>
 import { ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../api.js'
 
 const router = useRouter()
 const i18n = inject('i18n')
@@ -48,37 +49,35 @@ const handleVerify = async () => {
   }
   
   try {
-    const res = await fetch('http://localhost:3003/api/verify-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: temp.email, code: code.value })
-    })
+    // 先验证验证码
+    const verifyData = await api.verifyCode(temp.email, code.value)
     
-    const data = await res.json()
+    if (!verifyData.success) {
+      error.value = verifyData.error || (isEnglish.value ? 'Invalid code' : '验证码错误')
+      loading.value = false
+      return
+    }
     
-    if (data.success) {
-      // 创建用户
+    // 验证成功，注册用户
+    const regData = await api.register(temp.email, temp.password)
+    
+    if (regData.success) {
       const user = {
-        id: Date.now().toString(),
+        id: regData.userId,
         email: temp.email,
         password: temp.password,
         surveyCompleted: false,
-        survey: null,
-        createdAt: new Date().toISOString()
+        survey: null
       }
       
-      const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
-      users.push(user)
-      localStorage.setItem('hkusrs', JSON.stringify(users))
       localStorage.setItem('hkuuser', JSON.stringify(user))
       localStorage.removeItem('hku_reg_temp')
-      
       router.push('/survey')
     } else {
-      error.value = data.error || (isEnglish.value ? 'Invalid code' : '验证码错误')
+      error.value = regData.error || (isEnglish.value ? 'Registration failed' : '注册失败')
     }
   } catch (err) {
-    // 回退到本地验证
+    // 回退到本地模式
     if (Date.now() > temp.expires) {
       error.value = isEnglish.value ? 'Code expired, please register again' : '验证码已过期，请重新注册'
       localStorage.removeItem('hku_reg_temp')

@@ -14,6 +14,9 @@
           <router-link to="/register" class="btn btn-accent">{{ t('home.signup') }}</router-link>
           <router-link to="/login" class="btn btn-outline">{{ t('home.login') }}</router-link>
         </div>
+        <div class="demo-action">
+          <router-link to="/demo" class="btn btn-demo">🎭 体验测试账号</router-link>
+        </div>
       </div>
     </div>
     <div class="features container">
@@ -165,5 +168,26 @@ const toggleLang = () => {
 
 .feature-card p {
   color: var(--text-light);
+}
+
+.demo-action {
+  margin-top: 24px;
+}
+
+.btn-demo {
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.5);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-demo:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: white;
+  transform: scale(1.03);
 }
 </style>

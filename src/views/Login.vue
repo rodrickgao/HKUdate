@@ -35,6 +35,7 @@
 <script setup>
 import { ref, inject, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../api.js'
 
 const router = useRouter()
 const i18n = inject('i18n')
@@ -65,20 +66,36 @@ const handleLogin = async () => {
     return
   }
   
-  await new Promise(r => setTimeout(r, 500))
-  
-  const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
-  const user = users.find(u => u.email === email.value && u.password === password.value)
-  
-  if (user) {
-    if (rememberMe.value) {
-      localStorage.setItem('hkuuser', JSON.stringify(user))
+  try {
+    const data = await api.login(email.value, password.value)
+    
+    if (data.success) {
+      if (rememberMe.value) {
+        localStorage.setItem('hkuuser', JSON.stringify(data.user))
+      }
+      sessionStorage.setItem('hkuuser', JSON.stringify(data.user))
+      router.push(data.user.surveyCompleted ? '/dashboard' : '/survey')
+    } else {
+      error.value = data.error || (isEnglish.value ? 'Invalid email or password' : '邮箱或密码错误')
     }
-    sessionStorage.setItem('hkuuser', JSON.stringify(user))
-    router.push(user.surveyCompleted ? '/dashboard' : '/survey')
-  } else {
-    error.value = isEnglish.value ? 'Invalid email or password' : '邮箱或密码错误'
+  } catch (err) {
+    // 回退到本地模式
+    await new Promise(r => setTimeout(r, 500))
+    
+    const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
+    const user = users.find(u => u.email === email.value && u.password === password.value)
+    
+    if (user) {
+      if (rememberMe.value) {
+        localStorage.setItem('hkuuser', JSON.stringify(user))
+      }
+      sessionStorage.setItem('hkuuser', JSON.stringify(user))
+      router.push(user.surveyCompleted ? '/dashboard' : '/survey')
+    } else {
+      error.value = isEnglish.value ? 'Invalid email or password' : '邮箱或密码错误'
+    }
   }
+  
   loading.value = false
 }
 </script>

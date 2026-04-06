@@ -236,6 +236,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../api.js'
 
 const router = useRouter()
 const loading = ref(false)
@@ -301,24 +302,38 @@ const handleSurvey = async () => {
     return
   }
   
-  await new Promise(r => setTimeout(r, 500))
-  
-  // Save survey
   const user = JSON.parse(localStorage.getItem('hkuuser'))
-  user.surveyCompleted = true
-  user.survey = { ...survey }
   
-  const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
-  const idx = users.findIndex(u => u.id === user.id)
-  if (idx >= 0) {
-    users[idx] = user
-    localStorage.setItem('hkusrs', JSON.stringify(users))
+  try {
+    const data = await api.updateSurvey(user.id, { ...survey })
+    
+    if (data.success) {
+      user.surveyCompleted = true
+      user.survey = { ...survey }
+      localStorage.setItem('hkuuser', JSON.stringify(user))
+      router.push('/dashboard')
+    } else {
+      error.value = data.error || '提交失败'
+    }
+  } catch (err) {
+    // 回退到本地模式
+    await new Promise(r => setTimeout(r, 500))
+    
+    user.surveyCompleted = true
+    user.survey = { ...survey }
+    
+    const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
+    const idx = users.findIndex(u => u.id === user.id)
+    if (idx >= 0) {
+      users[idx] = user
+      localStorage.setItem('hkusrs', JSON.stringify(users))
+    }
+    
+    localStorage.setItem('hkuuser', JSON.stringify(user))
+    router.push('/dashboard')
   }
   
-  localStorage.setItem('hkuuser', JSON.stringify(user))
-  
   loading.value = false
-  router.push('/dashboard')
 }
 </script>
 

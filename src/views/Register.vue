@@ -35,6 +35,7 @@
 <script setup>
 import { ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../api.js'
 
 const router = useRouter()
 const i18n = inject('i18n')
@@ -69,6 +70,7 @@ const handleRegister = async () => {
   
   loading.value = true
   
+  // 本地模式检查重复注册
   const users = JSON.parse(localStorage.getItem('hkusrs') || '[]')
   if (users.find(u => u.email === email.value)) {
     error.value = isEnglish.value ? 'Email already registered' : '该邮箱已注册'
@@ -77,39 +79,26 @@ const handleRegister = async () => {
   }
   
   try {
-    const res = await fetch('http://localhost:3003/api/send-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value })
-    })
-    
-    const data = await res.json()
+    const data = await api.sendCode(email.value)
     
     if (data.success) {
-      // 保存注册信息到临时存储
       localStorage.setItem('hku_reg_temp', JSON.stringify({
         email: email.value,
         password: password.value,
-        code: data.code, // 开发模式会有code返回
+        code: data.code,
         expires: Date.now() + 10 * 60 * 1000
       }))
       
-      if (data.dev) {
-        success.value = isEnglish.value 
-          ? `Verification code sent! (Dev mode: ${data.code})`
-          : `验证码已发送！（开发模式：${data.code}）`
-      } else {
-        success.value = isEnglish.value 
-          ? 'Verification code sent to your email!'
-          : '验证码已发送到您的邮箱！'
-      }
+      success.value = isEnglish.value 
+        ? `Verification code sent! (Dev mode: ${data.code})`
+        : `验证码已发送！（开发模式：${data.code}）`
       
       setTimeout(() => router.push('/verify'), 1500)
     } else {
       error.value = data.error
     }
   } catch (err) {
-    // 如果服务器没运行，回退到本地模式
+    // 回退到本地模式
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     localStorage.setItem('hku_reg_temp', JSON.stringify({
       email: email.value,
