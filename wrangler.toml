@@ -1,0 +1,10 @@
+name = "hku-date"
+compatibility_date = "2024-01-01"
+
+# Build output directory for Cloudflare Pages
+pages_build_output_dir = "dist"
+
+# KV Namespace for user data
+[[kv_namespaces]]
+binding = "USERS_KV"
+id = "a4eb0b220b514226a783a991085384cb"
