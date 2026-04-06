@@ -35,4 +35,8 @@ export const api = {
   getMatchStats: () => api.fetch('/match-stats'),
   getMatchHistory: (userId) => api.fetch(`/match-history/${userId}`),
   getMatches: (userId) => api.fetch(`/matches/${userId}`),
+
+  // Demo / test accounts
+  seedTestUsers: () => api.fetch('/seed-test-users', { method: 'POST' }),
 }
+

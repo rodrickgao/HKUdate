@@ -43,7 +43,7 @@ const isEnglish = computed(() => i18n.state.lang === 'en')
 const t = (key) => i18n.t(key)
 
 const showNav = computed(() => {
-  const publicRoutes = ['Home', 'Login', 'Register', 'Verify', 'About', 'Feedback', 'Changelog', 'ComingSoon', 'NotFound']
+  const publicRoutes = ['Home', 'Login', 'Register', 'Verify', 'About', 'Feedback', 'Changelog', 'ComingSoon', 'Demo', 'NotFound']
   return !publicRoutes.includes(route.name)
 })
 

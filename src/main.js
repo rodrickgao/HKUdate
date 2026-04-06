@@ -89,6 +89,7 @@ import Report from './views/Report.vue'
 import Changelog from './views/Changelog.vue'
 import ComingSoon from './views/ComingSoon.vue'
 import NotFound from './views/NotFound.vue'
+import Demo from './views/Demo.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -105,6 +106,7 @@ const routes = [
   { path: '/report', name: 'Report', component: Report },
   { path: '/changelog', name: 'Changelog', component: Changelog },
   { path: '/coming-soon', name: 'ComingSoon', component: ComingSoon },
+  { path: '/demo', name: 'Demo', component: Demo },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ]
 
