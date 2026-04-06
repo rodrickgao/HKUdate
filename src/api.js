@@ -5,6 +5,8 @@ const USE_REMOTE_API = Boolean(REMOTE_API_BASE)
 const LOCAL_DB_KEY = 'hku_local_api_db_v1'
 const LEGACY_USERS_KEY = 'hkusrs'
 const MAX_STORED_ROUNDS = 20
+const MIN_MATCH_SCORE = 78
+const MIN_SHARED_INTERESTS = 2
 const GRADE_ORDER = {
   '1': 1,
   '2': 2,
@@ -137,7 +139,7 @@ const getGradeClosenessScore = (grade1, grade2) => {
 
 const buildScoreBreakdown = (survey1, survey2) => {
   const { commonCount, unionCount } = getInterestStats(survey1.interests, survey2.interests)
-  const interestScore = Math.round((commonCount / unionCount) * 32)
+  const interestScore = Math.round((commonCount / unionCount) * 30)
   const personalityScore = getPersonalityScore(survey1.personality, survey2.personality)
   const majorScore = survey1.major && survey1.major === survey2.major ? 12 : 0
   const gradeScore = getGradeClosenessScore(survey1.grade, survey2.grade)
@@ -147,10 +149,12 @@ const buildScoreBreakdown = (survey1, survey2) => {
     (normalizeList(survey1.preferGrade).length ? 2 : 0) +
     (normalizeList(survey2.preferGrade).length ? 2 : 0)
 
-  const totalScore = 25 + interestScore + personalityScore + majorScore + gradeScore + mutualPreferenceBonus
+  const rawTotalScore = 24 + interestScore + personalityScore + majorScore + gradeScore + mutualPreferenceBonus
+  const totalScore = Math.min(100, rawTotalScore)
 
   return {
     totalScore,
+    rawTotalScore,
     commonInterestCount: commonCount,
     interestScore,
     personalityScore,
@@ -161,18 +165,22 @@ const buildScoreBreakdown = (survey1, survey2) => {
 }
 
 const isPairEligible = (user1, user2) => {
-  if (!user1?.surveyCompleted || !user2?.surveyCompleted) return false
-  if (!user1?.survey || !user2?.survey) return false
-  if (user1.id === user2.id) return false
+  if (!user1?.surveyCompleted || !user2?.surveyCompleted) return { eligible: false, breakdown: null }
+  if (!user1?.survey || !user2?.survey) return { eligible: false, breakdown: null }
+  if (user1.id === user2.id) return { eligible: false, breakdown: null }
 
   const survey1 = user1.survey
   const survey2 = user2.survey
 
-  if (!isGenderCompatible(survey1, survey2)) return false
-  if (!isGradePreferenceSatisfied(survey1.preferGrade, survey1.grade, survey2.grade)) return false
-  if (!isGradePreferenceSatisfied(survey2.preferGrade, survey2.grade, survey1.grade)) return false
+  if (!isGenderCompatible(survey1, survey2)) return { eligible: false, breakdown: null }
+  if (!isGradePreferenceSatisfied(survey1.preferGrade, survey1.grade, survey2.grade)) return { eligible: false, breakdown: null }
+  if (!isGradePreferenceSatisfied(survey2.preferGrade, survey2.grade, survey1.grade)) return { eligible: false, breakdown: null }
 
-  return true
+  const breakdown = buildScoreBreakdown(survey1, survey2)
+  if (breakdown.commonInterestCount < MIN_SHARED_INTERESTS) return { eligible: false, breakdown }
+  if (breakdown.totalScore < MIN_MATCH_SCORE) return { eligible: false, breakdown }
+
+  return { eligible: true, breakdown }
 }
 
 const runMatchingAlgorithm = (users) => {
@@ -188,9 +196,10 @@ const runMatchingAlgorithm = (users) => {
     for (let j = i + 1; j < completedUsers.length; j += 1) {
       const user1 = completedUsers[i]
       const user2 = completedUsers[j]
-      if (!isPairEligible(user1, user2)) continue
+      const eligibility = isPairEligible(user1, user2)
+      if (!eligibility.eligible) continue
 
-      const breakdown = buildScoreBreakdown(user1.survey, user2.survey)
+      const breakdown = eligibility.breakdown
       const weight = Math.max(1, Math.round(breakdown.totalScore))
       weightedEdges.push([i, j, weight])
       edgeDetails.set(`${i}:${j}`, breakdown)
@@ -319,11 +328,13 @@ const createSeedDataset = () => {
     },
     {
       major: '经济学', grade: '6', interests: ['📚 阅读', '✈️ 旅行', '🍜 美食'], femaleType: 'INTJ', maleType: 'ENTJ',
-      femalePref: '希望对方成熟稳重但不无聊', malePref: '喜欢愿意一起旅行的人'
+      femalePref: '希望对方成熟稳重但不无聊', malePref: '喜欢愿意一起旅行的人',
+      femalePreferGender: 'female', malePreferGender: 'male'
     },
     {
       major: '法学', grade: '4', interests: ['📚 阅读', '☕ 咖啡', '🎬 影视'], femaleType: 'INFJ', maleType: 'ISTP',
-      femalePref: '期待理性又有边界感的交流', malePref: '想认识认真但不拘谨的人'
+      femalePref: '期待理性又有边界感的交流', malePref: '想认识认真但不拘谨的人',
+      femalePreferGender: 'female', malePreferGender: 'male'
     },
     {
       major: '生物医学', grade: '5', interests: ['🏃 运动', '🍳 烹饪', '🎵 音乐'], femaleType: 'ESFP', maleType: 'ESTP',
@@ -356,7 +367,7 @@ const createSeedDataset = () => {
           major: pair.major,
           interests: pair.interests,
           personality: pair.femaleType,
-          preferGender: 'male',
+          preferGender: pair.femalePreferGender || 'male',
           preferGrade: ['same'],
           preferAgeMin: '18',
           preferAgeMax: '28',
@@ -380,7 +391,7 @@ const createSeedDataset = () => {
           major: pair.major,
           interests: pair.interests,
           personality: pair.maleType,
-          preferGender: 'female',
+          preferGender: pair.malePreferGender || 'female',
           preferGrade: ['same'],
           preferAgeMin: '18',
           preferAgeMax: '28',
