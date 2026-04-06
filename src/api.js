@@ -284,63 +284,115 @@ const executeMatchingRound = (db, trigger = 'manual') => {
 const generateId = (prefix = 'user') => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
 const createSeedDataset = () => {
-  const avatars = ['🦊', '🐯', '🦋', '🦁', '🐱', '🐼', '🦄', '🐨', '🐸', '🐰', '🐻', '🦅', '🐷', '🦉', '🐮', '🐙', '🐹', '🐊']
-  const majors = [
-    '金融学', '计算机科学', '市场学', '工商管理', '心理学', '数据科学', '经济学', '工程学',
-    '法学', '建筑学', '新闻学', '医学', '会计学', '商业分析', '社会学', '传媒与媒体',
-    '物理学', '化学', '数学', '生物医学', '机械工程', '环境科学', '材料科学', '海洋科学',
-    '电子工程', '教育学', '人工智能', '哲学', '统计学', '公共卫生', '信息安全', '艺术设计',
-    '机器人学', '语言学', '供应链管理', '国际关系', '航空航天', '人力资源', '物联网工程', '考古学',
-    'MBA', '酒店管理', '风险投资', '广告学', '区块链工程', '房地产', '云计算', '时装设计',
-    '量子计算', '博物馆学', '神经科学', '城市规划', '生物统计', '环境工程', '数字媒体', '可持续发展'
-  ]
-  const personalities = ['INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'INTJ', 'INTP', 'ENTJ', 'ENTP', 'ISFP', 'ISTP', 'ESFP', 'ESTP']
-  const interests = [
-    ['📚 阅读', '🎵 音乐', '✈️ 旅行'],
-    ['💻 编程', '🎮 游戏', '🎵 音乐'],
-    ['🎬 影视', '📷 摄影', '☕ 咖啡'],
-    ['⚽ 足球', '🏀 篮球', '🎵 音乐'],
-    ['📚 阅读', '🧘 瑜伽', '🐱 撸猫'],
-    ['💻 编程', '📚 阅读', '🎵 音乐'],
-    ['📚 阅读', '✈️ 旅行', '🍜 美食'],
-    ['🏃 运动', '🎮 游戏', '🎤 KTV'],
-    ['📚 阅读', '🎬 影视', '🍳 烹饪'],
-    ['🎨 绘画', '📷 摄影', '✈️ 旅行'],
-    ['📊 数据', '💻 编程', '📚 阅读'],
-    ['🤝 社交', '☕ 咖啡', '🍜 美食'],
-  ]
-  const preferenceTexts = [
-    '希望认识有趣的人', '喜欢技术型的人', '喜欢拍照和喝咖啡', '爱运动，阳光型',
-    '喜欢安静文艺的人', '数据爱好者', '喜欢探索美食和旅行', '爱运动，爱唱歌',
-    '理性成熟', '喜欢设计感强的人', '想找同频交流对象', '期待长期稳定相处'
+  const pairTemplates = [
+    {
+      major: '金融学', grade: '3', interests: ['📚 阅读', '🎵 音乐', '☕ 咖啡'], femaleType: 'ENFP', maleType: 'ENFJ',
+      femalePref: '想找能一起散步聊天的人', malePref: '希望认识温柔有趣的同频对象'
+    },
+    {
+      major: '计算机科学', grade: '4', interests: ['💻 编程', '🎮 游戏', '🎵 音乐'], femaleType: 'INTJ', maleType: 'INTP',
+      femalePref: '喜欢技术型的人，可以一起做项目', malePref: '想认识会聊天也懂代码的人'
+    },
+    {
+      major: '市场学', grade: '2', interests: ['🎬 影视', '📷 摄影', '☕ 咖啡'], femaleType: 'ESFJ', maleType: 'ESFP',
+      femalePref: '喜欢拍照、探店和看展', malePref: '希望一起记录校园生活'
+    },
+    {
+      major: '心理学', grade: '1', interests: ['📚 阅读', '🧘 瑜伽', '🐱 撸猫'], femaleType: 'INFJ', maleType: 'ISFJ',
+      femalePref: '希望遇到温和有耐心的人', malePref: '喜欢细腻真诚的交流'
+    },
+    {
+      major: '数据科学', grade: '5', interests: ['📊 数据', '💻 编程', '📚 阅读'], femaleType: 'ENTJ', maleType: 'ENTP',
+      femalePref: '想认识逻辑强也有幽默感的人', malePref: '希望一起学习也一起吃饭'
+    },
+    {
+      major: '建筑学', grade: '4', interests: ['🎨 绘画', '📷 摄影', '✈️ 旅行'], femaleType: 'INFP', maleType: 'ISFP',
+      femalePref: '喜欢设计感和审美在线的人', malePref: '想找能一起看城市风景的人'
+    },
+    {
+      major: '工程学', grade: '3', interests: ['⚽ 足球', '🏀 篮球', '🎵 音乐'], femaleType: 'ESTJ', maleType: 'ISTJ',
+      femalePref: '喜欢靠谱上进的人', malePref: '希望遇到积极开朗的对象'
+    },
+    {
+      major: '传媒与媒体', grade: '2', interests: ['🎬 影视', '🎤 KTV', '🍜 美食'], femaleType: 'ENFJ', maleType: 'ENFP',
+      femalePref: '爱表达也爱分享生活', malePref: '想和有趣的人一起探索香港'
+    },
+    {
+      major: '经济学', grade: '6', interests: ['📚 阅读', '✈️ 旅行', '🍜 美食'], femaleType: 'INTJ', maleType: 'ENTJ',
+      femalePref: '希望对方成熟稳重但不无聊', malePref: '喜欢愿意一起旅行的人'
+    },
+    {
+      major: '法学', grade: '4', interests: ['📚 阅读', '☕ 咖啡', '🎬 影视'], femaleType: 'INFJ', maleType: 'ISTP',
+      femalePref: '期待理性又有边界感的交流', malePref: '想认识认真但不拘谨的人'
+    },
+    {
+      major: '生物医学', grade: '5', interests: ['🏃 运动', '🍳 烹饪', '🎵 音乐'], femaleType: 'ESFP', maleType: 'ESTP',
+      femalePref: '希望对方热爱生活', malePref: '喜欢阳光健康型的人'
+    },
+    {
+      major: '商业分析', grade: '3', interests: ['🤝 社交', '☕ 咖啡', '📊 数据'], femaleType: 'ENTP', maleType: 'ENFJ',
+      femalePref: '想找思路清晰又会聊天的人', malePref: '喜欢聪明独立的对象'
+    },
   ]
 
-  return Array.from({ length: 56 }, (_, index) => {
-    const userIndex = index + 1
-    return {
-      id: `seed-${userIndex}`,
-      email: `user${userIndex}@connect.hku.hk`,
-      password: 'test123',
-      surveyCompleted: true,
-      survey: {
-        avatar: avatars[index % avatars.length],
-        gender: index % 2 === 0 ? 'female' : 'male',
-        grade: String((index % 6) + 1),
-        major: majors[index % majors.length],
-        interests: interests[index % interests.length],
-        personality: personalities[index % personalities.length],
-        preferGender: 'any',
-        preferGrade: [],
-        preferAgeMin: '18',
-        preferAgeMax: '28',
-        preferTraits: [],
-        preference: preferenceTexts[index % preferenceTexts.length],
+  const femaleAvatars = ['🦊', '🦋', '🐱', '🦄', '🐰', '🦉', '🐼', '🐨', '🐻', '🐹', '🐮', '🐙']
+  const maleAvatars = ['🐯', '🦁', '🦅', '🐸', '🐷', '🐊', '🐺', '🐵', '🦌', '🐗', '🦖', '🐬']
+
+  return pairTemplates.flatMap((pair, index) => {
+    const userNumber = index * 2 + 1
+    const createdAt = new Date(Date.now() - userNumber * 60000).toISOString()
+    const updatedAt = new Date(Date.now() - userNumber * 60000).toISOString()
+
+    return [
+      {
+        id: `seed-${userNumber}`,
+        email: `user${userNumber}@connect.hku.hk`,
+        password: 'test123',
+        surveyCompleted: true,
+        survey: {
+          avatar: femaleAvatars[index % femaleAvatars.length],
+          gender: 'female',
+          grade: pair.grade,
+          major: pair.major,
+          interests: pair.interests,
+          personality: pair.femaleType,
+          preferGender: 'male',
+          preferGrade: ['same'],
+          preferAgeMin: '18',
+          preferAgeMax: '28',
+          preferTraits: [],
+          preference: pair.femalePref,
+        },
+        createdAt,
+        surveyUpdatedAt: updatedAt,
+        isMatched: false,
+        currentMatchId: null,
       },
-      createdAt: new Date(Date.now() - userIndex * 60000).toISOString(),
-      surveyUpdatedAt: new Date(Date.now() - userIndex * 60000).toISOString(),
-      isMatched: false,
-      currentMatchId: null,
-    }
+      {
+        id: `seed-${userNumber + 1}`,
+        email: `user${userNumber + 1}@connect.hku.hk`,
+        password: 'test123',
+        surveyCompleted: true,
+        survey: {
+          avatar: maleAvatars[index % maleAvatars.length],
+          gender: 'male',
+          grade: pair.grade,
+          major: pair.major,
+          interests: pair.interests,
+          personality: pair.maleType,
+          preferGender: 'female',
+          preferGrade: ['same'],
+          preferAgeMin: '18',
+          preferAgeMax: '28',
+          preferTraits: [],
+          preference: pair.malePref,
+        },
+        createdAt,
+        surveyUpdatedAt: updatedAt,
+        isMatched: false,
+        currentMatchId: null,
+      },
+    ]
   })
 }
 
@@ -586,22 +638,27 @@ const localApi = {
   async seedTestUsers() {
     const db = readLocalDb()
     const seedUsers = createSeedDataset()
-    let created = 0
+    const isDemoUser = (email = '') => /^user\d+@connect\.hku\.hk$/.test(email)
+    const preservedUsers = db.users.filter((user) => !isDemoUser(user.email))
+    const replaced = db.users.length - preservedUsers.length
 
-    seedUsers.forEach((seedUser) => {
-      if (db.users.find((user) => user.email === seedUser.email)) return
-      db.users.push({ ...seedUser })
-      created += 1
-    })
+    db.users = [...preservedUsers, ...seedUsers.map((user) => ({ ...user }))]
+    db.matches = { rounds: [], lastMatchTime: null }
 
     const completedUsers = db.users.filter((user) => user.surveyCompleted && user.survey)
     if (completedUsers.length >= 2) {
-      executeMatchingRound(db, created > 0 ? 'seed-test-users' : 'seed-test-users-refresh')
+      executeMatchingRound(db, 'seed-test-users-reset')
     } else {
       writeLocalDb(db)
     }
 
-    return { success: true, message: `Created ${created} test users`, totalUsers: db.users.length }
+    return {
+      success: true,
+      message: `Prepared ${seedUsers.length} test users and rebuilt matching examples`,
+      totalUsers: db.users.length,
+      demoUsers: seedUsers.length,
+      replaced,
+    }
   },
 }
 
