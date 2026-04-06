@@ -7,7 +7,7 @@
 ## 🚀 快速开始
 
 ### 最快：直接打开
-**https://fc5c86e5.hku-date.pages.dev**
+**https://0e7183b1.hku-date.pages.dev**
 
 ⚠️ 在线版本验证码固定为测试码 `123456`
 
