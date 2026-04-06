@@ -78,8 +78,8 @@
             <span class="stat-label">已完成问卷</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num">{{ statsData?.latestRoundStats?.matchedPairs || 0 }}</span>
-            <span class="stat-label">已配对人数</span>
+            <span class="stat-num">{{ statsData?.latestRoundStats?.matchedUsers || (statsData?.latestRoundStats?.matchedPairs ? statsData.latestRoundStats.matchedPairs * 2 : 0) }}</span>
+            <span class="stat-label">已匹配人数</span>
           </div>
         </div>
         <p class="last-match" v-if="statsData?.lastMatchTime">

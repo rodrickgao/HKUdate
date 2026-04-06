@@ -532,15 +532,27 @@ const localApi = {
   },
 
   async getMatchStats() {
-    const db = readLocalDb()
-    const completedUsers = db.users.filter((user) => user.surveyCompleted)
+    let db = readLocalDb()
+    const completedUsers = db.users.filter((user) => user.surveyCompleted && user.survey)
     const latestRound = db.matches.rounds[0]
+    const needsFreshRound = completedUsers.length >= 2 && (
+      !latestRound ||
+      latestRound.stats.totalUsers !== completedUsers.length ||
+      latestRound.stats.matchedPairs === 0
+    )
+
+    if (needsFreshRound) {
+      executeMatchingRound(db, 'stats-refresh')
+      db = readLocalDb()
+    }
+
+    const refreshedLatestRound = db.matches.rounds[0]
     return {
       success: true,
       totalUsers: db.users.length,
       completedSurveyUsers: completedUsers.length,
       lastMatchTime: db.matches.lastMatchTime,
-      latestRoundStats: latestRound?.stats || null,
+      latestRoundStats: refreshedLatestRound?.stats || null,
       totalRounds: db.matches.rounds.length,
     }
   },
@@ -582,7 +594,13 @@ const localApi = {
       created += 1
     })
 
-    writeLocalDb(db)
+    const completedUsers = db.users.filter((user) => user.surveyCompleted && user.survey)
+    if (completedUsers.length >= 2) {
+      executeMatchingRound(db, created > 0 ? 'seed-test-users' : 'seed-test-users-refresh')
+    } else {
+      writeLocalDb(db)
+    }
+
     return { success: true, message: `Created ${created} test users`, totalUsers: db.users.length }
   },
 }
